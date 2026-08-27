@@ -20,9 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Devices
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material.icons.outlined.Devices
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -68,6 +70,7 @@ enum class AppTab(
 ) {
     GENERATOR("Generator", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome, "tab_generator"),
     SAVED("Saved", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder, "tab_saved"),
+    SYSTEM("System", Icons.Filled.Devices, Icons.Outlined.Devices, "tab_system"),
     SETTINGS("Settings", Icons.Filled.Settings, Icons.Outlined.Settings, "tab_settings")
 }
 
@@ -83,6 +86,8 @@ fun MainScreen(
     val savedNames by viewModel.filteredSavedNames.collectAsState()
     val savedSearchQuery by viewModel.savedSearchQuery.collectAsState()
     val savedCount by viewModel.savedCount.collectAsState()
+    val currentDeviceProfile by viewModel.currentDeviceProfile.collectAsState()
+    val savedDeviceProfiles by viewModel.savedDeviceProfiles.collectAsState()
 
     val themeMode by viewModel.preferences.themeMode.collectAsState()
     val appAccentColor by viewModel.preferences.appAccentColor.collectAsState()
@@ -264,6 +269,19 @@ fun MainScreen(
                                 onRemoveSavedName = { id, name -> viewModel.removeSavedName(id, name) },
                                 onCopyAllSaved = { viewModel.copyAllVisibleNames(it) },
                                 onClearAllSaved = { viewModel.clearAllSaved() }
+                            )
+
+                            AppTab.SYSTEM -> com.example.ui.screens.SystemScreen(
+                                currentProfile = currentDeviceProfile,
+                                savedProfiles = savedDeviceProfiles,
+                                onGenerateRandom = { viewModel.generateRandomDevice() },
+                                onGenerateCustom = { brand, model, android, ram, storage, res ->
+                                    viewModel.generateCustomDevice(brand, model, android, ram, storage, res)
+                                },
+                                onSaveProfile = { viewModel.saveCurrentDeviceProfile() },
+                                onDeleteProfile = { viewModel.deleteDeviceProfile(it) },
+                                onResetProfile = { viewModel.resetDeviceProfile() },
+                                onCopyProfile = { viewModel.copyDeviceProfileToClipboard(it) }
                             )
 
                             AppTab.SETTINGS -> SettingsScreen(

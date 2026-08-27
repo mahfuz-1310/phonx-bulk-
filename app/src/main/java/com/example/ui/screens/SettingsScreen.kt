@@ -79,7 +79,7 @@ fun SettingsScreen(
         modifier = modifier
             .fillMaxSize()
             .testTag("settings_screen"),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 96.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Section 1: Appearance & Theme

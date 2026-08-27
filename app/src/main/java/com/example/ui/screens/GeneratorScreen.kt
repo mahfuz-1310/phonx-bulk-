@@ -99,7 +99,7 @@ fun GeneratorScreen(
         modifier = modifier
             .fillMaxSize()
             .testTag("generator_screen"),
-        contentPadding = PaddingValues(bottom = 96.dp)
+        contentPadding = PaddingValues(bottom = 24.dp)
     ) {
         // Section 1: Generator Controls Card
         item {

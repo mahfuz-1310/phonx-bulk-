@@ -26,6 +26,8 @@ class AppPreferences(context: Context) {
         const val KEY_DEFAULT_STYLE = "default_style"
         const val KEY_NO_REPEAT = "no_repeat"
         const val KEY_TOTAL_GENERATED = "total_generated_count"
+        const val KEY_SAVED_DEVICE_PROFILES = "saved_device_profiles"
+        const val KEY_CURRENT_DEVICE_PROFILE = "current_device_profile"
 
         // Default vibrant & professional Indigo theme
         const val DEFAULT_ACCENT_COLOR = 0xFF4F46E5.toInt() // Indigo 600
@@ -190,5 +192,26 @@ class AppPreferences(context: Context) {
         _uiAccentColor.value = DEFAULT_ACCENT_COLOR
         _buttonColor.value = DEFAULT_BUTTON_COLOR
         _fontOption.value = FontOption.DEFAULT
+    }
+
+    fun saveCurrentDeviceProfile(profile: com.example.model.DeviceProfile?) {
+        val str = profile?.serialize() ?: ""
+        prefs.edit().putString(KEY_CURRENT_DEVICE_PROFILE, str).apply()
+    }
+
+    fun loadCurrentDeviceProfile(): com.example.model.DeviceProfile? {
+        val str = prefs.getString(KEY_CURRENT_DEVICE_PROFILE, "")
+        if (str.isNullOrBlank()) return null
+        return com.example.model.DeviceProfile.deserialize(str)
+    }
+
+    fun saveSavedDeviceProfiles(profiles: List<com.example.model.DeviceProfile>) {
+        val set = profiles.map { it.serialize() }.toSet()
+        prefs.edit().putStringSet(KEY_SAVED_DEVICE_PROFILES, set).apply()
+    }
+
+    fun loadSavedDeviceProfiles(): List<com.example.model.DeviceProfile> {
+        val set = prefs.getStringSet(KEY_SAVED_DEVICE_PROFILES, emptySet()) ?: emptySet()
+        return set.mapNotNull { com.example.model.DeviceProfile.deserialize(it) }.sortedByDescending { it.timestamp }
     }
 }

@@ -12,6 +12,8 @@ import com.example.data.preferences.AppPreferences
 import com.example.data.repository.SavedNamesRepository
 import com.example.generator.NameGeneratorEngine
 import com.example.model.Country
+import com.example.model.DeviceDataStore
+import com.example.model.DeviceProfile
 import com.example.model.FontOption
 import com.example.model.Gender
 import com.example.model.GeneratedName
@@ -58,6 +60,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _savedSearchQuery = MutableStateFlow("")
     val savedSearchQuery: StateFlow<String> = _savedSearchQuery.asStateFlow()
+
+    private val _currentDeviceProfile = MutableStateFlow<DeviceProfile?>(preferences.loadCurrentDeviceProfile())
+    val currentDeviceProfile: StateFlow<DeviceProfile?> = _currentDeviceProfile.asStateFlow()
+
+    private val _savedDeviceProfiles = MutableStateFlow<List<DeviceProfile>>(preferences.loadSavedDeviceProfiles())
+    val savedDeviceProfiles: StateFlow<List<DeviceProfile>> = _savedDeviceProfiles.asStateFlow()
 
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
@@ -294,6 +302,81 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _generatorState.value = _generatorState.value.copy(selectedFont = FontOption.DEFAULT)
         viewModelScope.launch {
             _toastEvent.emit("Appearance reset to default")
+        }
+    }
+
+    fun generateRandomDevice() {
+        val profile = DeviceDataStore.generateRandom()
+        _currentDeviceProfile.value = profile
+        preferences.saveCurrentDeviceProfile(profile)
+        viewModelScope.launch {
+            _toastEvent.emit("Generated random device profile: ${profile.model}")
+        }
+    }
+
+    fun generateCustomDevice(brand: String, model: String, androidVersion: String, ram: String, storage: String, resolution: String) {
+        val profile = DeviceDataStore.generateCustom(brand, model, androidVersion, ram, storage, resolution)
+        _currentDeviceProfile.value = profile
+        preferences.saveCurrentDeviceProfile(profile)
+        viewModelScope.launch {
+            _toastEvent.emit("Generated custom device profile: ${profile.model}")
+        }
+    }
+
+    fun saveCurrentDeviceProfile() {
+        val current = _currentDeviceProfile.value
+        if (current != null) {
+            val list = _savedDeviceProfiles.value.toMutableList()
+            if (!list.any { it.id == current.id }) {
+                list.add(0, current)
+                _savedDeviceProfiles.value = list
+                preferences.saveSavedDeviceProfiles(list)
+                viewModelScope.launch {
+                    _toastEvent.emit("Device profile saved successfully")
+                }
+            } else {
+                viewModelScope.launch {
+                    _toastEvent.emit("Profile already saved")
+                }
+            }
+        }
+    }
+
+    fun deleteDeviceProfile(id: String) {
+        val list = _savedDeviceProfiles.value.filter { it.id != id }
+        _savedDeviceProfiles.value = list
+        preferences.saveSavedDeviceProfiles(list)
+        viewModelScope.launch {
+            _toastEvent.emit("Device profile deleted")
+        }
+    }
+
+    fun resetDeviceProfile() {
+        _currentDeviceProfile.value = null
+        preferences.saveCurrentDeviceProfile(null)
+        viewModelScope.launch {
+            _toastEvent.emit("Device profile reset")
+        }
+    }
+
+    fun copyDeviceProfileToClipboard(profile: DeviceProfile) {
+        val clipboard = getApplication<Application>().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val text = """
+            Device Profile:
+            Brand: ${profile.brand}
+            Model: ${profile.model}
+            Android: ${profile.androidVersion}
+            RAM: ${profile.ram}
+            Storage: ${profile.storage}
+            Screen: ${profile.screenResolution}
+            CPU: ${profile.cpu}
+            GPU: ${profile.gpu}
+            Device Name: ${profile.deviceName}
+        """.trimIndent()
+        val clip = ClipData.newPlainText("Device Profile", text)
+        clipboard.setPrimaryClip(clip)
+        viewModelScope.launch {
+            _toastEvent.emit("Device profile copied to clipboard")
         }
     }
 }
