@@ -17,11 +17,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.model.DeviceDataStore
 import com.example.model.DeviceProfile
+import com.example.model.ShizukuStatus
 
 @Composable
 fun SystemScreen(
     currentProfile: DeviceProfile?,
     savedProfiles: List<DeviceProfile>,
+    shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_INSTALLED,
+    onCheckShizuku: () -> Unit = {},
+    onRequestShizukuPermission: () -> Unit = {},
     onGenerateRandom: () -> Unit,
     onGenerateCustom: (String, String, String, String, String, String) -> Unit,
     onSaveProfile: () -> Unit,
@@ -31,6 +35,20 @@ fun SystemScreen(
     modifier: Modifier = Modifier
 ) {
     var showGeneratorDialog by remember { mutableStateOf(false) }
+
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                onCheckShizuku()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onCheckShizuku()
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LazyColumn(
         modifier = modifier
@@ -142,6 +160,14 @@ fun SystemScreen(
                             Text("Create Device")
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    ShizukuStatusCard(
+                        status = shizukuStatus,
+                        onCheckAgain = onCheckShizuku,
+                        onRequestPermission = onRequestShizukuPermission
+                    )
                 }
             }
         }
@@ -493,4 +519,138 @@ fun DeviceGeneratorDialog(
         },
         shape = RoundedCornerShape(20.dp)
     )
+}
+
+@Composable
+fun ShizukuStatusCard(
+    status: ShizukuStatus,
+    onCheckAgain: () -> Unit,
+    onRequestPermission: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .testTag("shizuku_status_card"),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = when (status) {
+                ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            }
+        ),
+        border = BorderStroke(
+            1.dp,
+            when (status) {
+                ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when (status) {
+                            ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
+                            ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Security
+                            else -> Icons.Outlined.Info
+                        },
+                        contentDescription = null,
+                        tint = when (status) {
+                            ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
+                            ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.error
+                        },
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Shizuku Status",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                val statusText = when (status) {
+                    ShizukuStatus.NOT_INSTALLED -> "Not Installed"
+                    ShizukuStatus.NOT_RUNNING -> "Not Running"
+                    ShizukuStatus.PERMISSION_REQUIRED -> "Permission Required"
+                    ShizukuStatus.CONNECTED -> "Connected"
+                }
+
+                val statusColor = when (status) {
+                    ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
+                    ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
+                    else -> MaterialTheme.colorScheme.error
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = statusColor.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = statusColor,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            val messageText = when (status) {
+                ShizukuStatus.NOT_INSTALLED -> "Shizuku is not installed on this device."
+                ShizukuStatus.NOT_RUNNING -> "Shizuku is installed but the Shizuku service is not running."
+                ShizukuStatus.PERMISSION_REQUIRED -> "Shizuku is running, but this app does not have Shizuku permission."
+                ShizukuStatus.CONNECTED -> "Shizuku permission granted."
+            }
+
+            Text(
+                text = messageText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (status != ShizukuStatus.CONNECTED) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    if (status == ShizukuStatus.PERMISSION_REQUIRED) {
+                        Button(
+                            onClick = onRequestPermission,
+                            modifier = Modifier.testTag("shizuku_request_permission_btn"),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Outlined.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Request Permission")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = onCheckAgain,
+                            modifier = Modifier.testTag("shizuku_check_again_btn"),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Check Again")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

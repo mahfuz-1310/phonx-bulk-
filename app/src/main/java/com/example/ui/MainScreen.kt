@@ -88,6 +88,7 @@ fun MainScreen(
     val savedCount by viewModel.savedCount.collectAsState()
     val currentDeviceProfile by viewModel.currentDeviceProfile.collectAsState()
     val savedDeviceProfiles by viewModel.savedDeviceProfiles.collectAsState()
+    val shizukuStatus by viewModel.shizukuStatus.collectAsState()
 
     val themeMode by viewModel.preferences.themeMode.collectAsState()
     val appAccentColor by viewModel.preferences.appAccentColor.collectAsState()
@@ -274,6 +275,9 @@ fun MainScreen(
                             AppTab.SYSTEM -> com.example.ui.screens.SystemScreen(
                                 currentProfile = currentDeviceProfile,
                                 savedProfiles = savedDeviceProfiles,
+                                shizukuStatus = shizukuStatus,
+                                onCheckShizuku = { viewModel.checkShizukuStatus() },
+                                onRequestShizukuPermission = { viewModel.requestShizukuPermission() },
                                 onGenerateRandom = { viewModel.generateRandomDevice() },
                                 onGenerateCustom = { brand, model, android, ram, storage, res ->
                                     viewModel.generateCustomDevice(brand, model, android, ram, storage, res)

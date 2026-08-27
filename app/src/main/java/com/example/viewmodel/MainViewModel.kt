@@ -18,7 +18,9 @@ import com.example.model.FontOption
 import com.example.model.Gender
 import com.example.model.GeneratedName
 import com.example.model.NameStyle
+import com.example.model.ShizukuStatus
 import com.example.model.ThemeMode
+import rikka.shizuku.Shizuku
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -67,6 +69,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _savedDeviceProfiles = MutableStateFlow<List<DeviceProfile>>(preferences.loadSavedDeviceProfiles())
     val savedDeviceProfiles: StateFlow<List<DeviceProfile>> = _savedDeviceProfiles.asStateFlow()
 
+    private val _shizukuStatus = MutableStateFlow<ShizukuStatus>(ShizukuStatus.NOT_INSTALLED)
+    val shizukuStatus: StateFlow<ShizukuStatus> = _shizukuStatus.asStateFlow()
+
+    private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+        if (requestCode == 1001) {
+            checkShizukuStatus()
+        }
+    }
+
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
@@ -83,6 +94,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             noRepeat = preferences.noRepeat.value,
             selectedFont = preferences.fontOption.value
         )
+
+        try {
+            Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
+        } catch (e: Throwable) {}
+        checkShizukuStatus()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        try {
+            Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
+        } catch (e: Throwable) {}
     }
 
     val allSavedNames: StateFlow<List<GeneratedName>> = repository.allSavedNames
@@ -377,6 +400,67 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         clipboard.setPrimaryClip(clip)
         viewModelScope.launch {
             _toastEvent.emit("Device profile copied to clipboard")
+        }
+    }
+
+    fun checkShizukuStatus() {
+        val context = getApplication<Application>()
+        val isInstalled = try {
+            context.packageManager.getPackageInfo("moe.shizuku.manager", 0)
+            true
+        } catch (e: Throwable) {
+            false
+        }
+        if (!isInstalled) {
+            _shizukuStatus.value = ShizukuStatus.NOT_INSTALLED
+            return
+        }
+
+        val isRunning = try {
+            Shizuku.pingBinder()
+        } catch (e: Throwable) {
+            false
+        }
+        if (!isRunning) {
+            _shizukuStatus.value = ShizukuStatus.NOT_RUNNING
+            return
+        }
+
+        val hasPermission = try {
+            if (Shizuku.isPreV11()) {
+                false
+            } else {
+                Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+            }
+        } catch (e: Throwable) {
+            false
+        }
+
+        if (!hasPermission) {
+            _shizukuStatus.value = ShizukuStatus.PERMISSION_REQUIRED
+        } else {
+            _shizukuStatus.value = ShizukuStatus.CONNECTED
+        }
+    }
+
+    fun requestShizukuPermission() {
+        try {
+            if (Shizuku.isPreV11()) {
+                viewModelScope.launch {
+                    _toastEvent.emit("Shizuku version too old")
+                }
+            } else if (Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                _shizukuStatus.value = ShizukuStatus.CONNECTED
+                viewModelScope.launch {
+                    _toastEvent.emit("Shizuku permission already granted")
+                }
+            } else {
+                Shizuku.requestPermission(1001)
+            }
+        } catch (e: Throwable) {
+            viewModelScope.launch {
+                _toastEvent.emit("Failed to request Shizuku permission: ${e.localizedMessage}")
+            }
         }
     }
 }
