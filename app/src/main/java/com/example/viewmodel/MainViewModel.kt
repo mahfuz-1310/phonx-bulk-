@@ -18,8 +18,8 @@ import com.example.model.FontOption
 import com.example.model.Gender
 import com.example.model.GeneratedName
 import com.example.model.NameStyle
-import com.example.model.ShizukuStatus
 import com.example.model.ThemeMode
+import com.example.model.ShizukuStatus
 import rikka.shizuku.Shizuku
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -463,4 +463,5 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
+
 }

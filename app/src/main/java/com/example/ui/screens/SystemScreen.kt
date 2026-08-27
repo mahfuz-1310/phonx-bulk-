@@ -168,6 +168,7 @@ fun SystemScreen(
                         onCheckAgain = onCheckShizuku,
                         onRequestPermission = onRequestShizukuPermission
                     )
+
                 }
             }
         }
@@ -298,18 +299,19 @@ fun DeviceProfileCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 OutlinedButton(
                     onClick = onCopy,
                     modifier = Modifier
                         .weight(1f)
                         .testTag("device_copy_btn"),
-                    shape = RoundedCornerShape(10.dp)
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.ContentCopy, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Copy")
+                    Text("Copy", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
 
                 if (onRegenerate != null) {
@@ -318,11 +320,12 @@ fun DeviceProfileCard(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("device_regen_btn"),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Regen")
+                        Text("Regen", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
 
@@ -332,11 +335,12 @@ fun DeviceProfileCard(
                         modifier = Modifier
                             .weight(1f)
                             .testTag("device_save_btn"),
-                        shape = RoundedCornerShape(10.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
                     ) {
-                        Icon(Icons.Outlined.BookmarkAdd, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Outlined.BookmarkAdd, contentDescription = null, modifier = Modifier.size(14.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Save")
+                        Text("Save", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                     }
                 }
 
@@ -346,11 +350,12 @@ fun DeviceProfileCard(
                         .weight(1f)
                         .testTag("device_delete_btn"),
                     shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp)
                 ) {
-                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Outlined.Delete, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (isCurrent) "Reset" else "Delete")
+                    Text(if (isCurrent) "Reset" else "Delete", style = MaterialTheme.typography.labelSmall, maxLines = 1)
                 }
             }
         }
@@ -527,23 +532,31 @@ fun ShizukuStatusCard(
     onCheckAgain: () -> Unit,
     onRequestPermission: () -> Unit
 ) {
+    val statusColor = when (status) {
+        ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
+        ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
+        ShizukuStatus.NOT_RUNNING -> MaterialTheme.colorScheme.tertiary
+        ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+    }
+
+    val statusIcon = when (status) {
+        ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
+        ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Lock
+        ShizukuStatus.NOT_RUNNING -> Icons.Outlined.Warning
+        ShizukuStatus.NOT_INSTALLED -> Icons.Outlined.ErrorOutline
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .testTag("shizuku_status_card"),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when (status) {
-                ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                else -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            }
+            containerColor = statusColor.copy(alpha = 0.05f)
         ),
         border = BorderStroke(
             1.dp,
-            when (status) {
-                ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
-                else -> MaterialTheme.colorScheme.outlineVariant
-            }
+            statusColor.copy(alpha = 0.4f)
         )
     ) {
         Column(
@@ -558,17 +571,9 @@ fun ShizukuStatusCard(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = when (status) {
-                            ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
-                            ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Security
-                            else -> Icons.Outlined.Info
-                        },
+                        imageVector = statusIcon,
                         contentDescription = null,
-                        tint = when (status) {
-                            ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
-                            ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.error
-                        },
+                        tint = statusColor,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
@@ -584,12 +589,6 @@ fun ShizukuStatusCard(
                     ShizukuStatus.NOT_RUNNING -> "Not Running"
                     ShizukuStatus.PERMISSION_REQUIRED -> "Permission Required"
                     ShizukuStatus.CONNECTED -> "Connected"
-                }
-
-                val statusColor = when (status) {
-                    ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
-                    ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
-                    else -> MaterialTheme.colorScheme.error
                 }
 
                 Surface(
@@ -631,7 +630,8 @@ fun ShizukuStatusCard(
                             onClick = onRequestPermission,
                             modifier = Modifier.testTag("shizuku_request_permission_btn"),
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = statusColor)
                         ) {
                             Icon(Icons.Outlined.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -654,3 +654,4 @@ fun ShizukuStatusCard(
         }
     }
 }
+
