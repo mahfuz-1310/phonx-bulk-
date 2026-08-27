@@ -277,12 +277,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         preferences.setThemeMode(mode)
     }
 
+    fun setAppAccentColor(colorInt: Int) {
+        preferences.setAppAccentColor(colorInt)
+    }
+
     fun setUiAccentColor(colorInt: Int) {
-        preferences.setUiAccentColor(colorInt)
+        preferences.setAppAccentColor(colorInt)
     }
 
     fun setButtonColor(colorInt: Int) {
-        preferences.setButtonColor(colorInt)
+        preferences.setAppAccentColor(colorInt)
     }
 
     fun resetAppearance() {

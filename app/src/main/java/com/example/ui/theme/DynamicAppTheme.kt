@@ -16,7 +16,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import com.example.model.ThemeMode
 
-val LocalButtonColor = staticCompositionLocalOf { Color(0xFF4338CA) }
+val LocalButtonColor = staticCompositionLocalOf { Color(0xFF4F46E5) }
 val LocalButtonContentColor = staticCompositionLocalOf { Color.White }
 
 fun calculateContrastColor(backgroundColor: Color): Color {
@@ -32,7 +32,7 @@ fun calculateContrastColor(backgroundColor: Color): Color {
 fun DynamicPhonxTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     accentColorInt: Int = 0xFF4F46E5.toInt(),
-    buttonColorInt: Int = 0xFF4338CA.toInt(),
+    buttonColorInt: Int = accentColorInt,
     content: @Composable () -> Unit
 ) {
     val isDark = when (themeMode) {

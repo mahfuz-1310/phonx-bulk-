@@ -25,12 +25,7 @@ class GreetingScreenshotTest {
   fun greeting_screenshot() {
     composeTestRule.setContent {
       DynamicPhonxTheme {
-        PhonxTopBar(
-          themeMode = ThemeMode.LIGHT,
-          savedCount = 5,
-          onToggleTheme = {},
-          onNavigateToSaved = {}
-        )
+        PhonxTopBar()
       }
     }
 

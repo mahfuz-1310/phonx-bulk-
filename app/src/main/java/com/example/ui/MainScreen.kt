@@ -77,8 +77,7 @@ fun MainScreen(
     val savedCount by viewModel.savedCount.collectAsState()
 
     val themeMode by viewModel.preferences.themeMode.collectAsState()
-    val uiAccentColor by viewModel.preferences.uiAccentColor.collectAsState()
-    val buttonColor by viewModel.preferences.buttonColor.collectAsState()
+    val appAccentColor by viewModel.preferences.appAccentColor.collectAsState()
     val fontOption by viewModel.preferences.fontOption.collectAsState()
     val totalGeneratedCount by viewModel.preferences.totalGeneratedCount.collectAsState()
 
@@ -95,19 +94,7 @@ fun MainScreen(
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
-                PhonxTopBar(
-                    themeMode = themeMode,
-                    savedCount = savedCount,
-                    onToggleTheme = {
-                        val nextMode = when (themeMode) {
-                            ThemeMode.LIGHT -> ThemeMode.DARK
-                            ThemeMode.DARK -> ThemeMode.LIGHT
-                            ThemeMode.SYSTEM -> ThemeMode.DARK
-                        }
-                        viewModel.setThemeMode(nextMode)
-                    },
-                    onNavigateToSaved = { selectedTab = AppTab.SAVED }
-                )
+                PhonxTopBar()
             },
             bottomBar = {
                 if (!isWideScreen) {
@@ -258,14 +245,12 @@ fun MainScreen(
 
                             AppTab.SETTINGS -> SettingsScreen(
                                 themeMode = themeMode,
-                                uiAccentColor = uiAccentColor,
-                                buttonColor = buttonColor,
+                                appAccentColor = appAccentColor,
                                 selectedFont = fontOption,
                                 totalSavedCount = savedCount,
                                 totalGeneratedCount = totalGeneratedCount,
                                 onThemeModeChanged = { viewModel.setThemeMode(it) },
-                                onUiAccentColorChanged = { viewModel.setUiAccentColor(it) },
-                                onButtonColorChanged = { viewModel.setButtonColor(it) },
+                                onAppAccentColorChanged = { viewModel.setAppAccentColor(it) },
                                 onFontChanged = { viewModel.setFont(it) },
                                 onResetAppearance = { viewModel.resetAppearance() }
                             )

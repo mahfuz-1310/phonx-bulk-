@@ -19,13 +19,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val themeMode by viewModel.preferences.themeMode.collectAsState()
-            val uiAccentColor by viewModel.preferences.uiAccentColor.collectAsState()
-            val buttonColor by viewModel.preferences.buttonColor.collectAsState()
+            val appAccentColor by viewModel.preferences.appAccentColor.collectAsState()
 
             DynamicPhonxTheme(
                 themeMode = themeMode,
-                accentColorInt = uiAccentColor,
-                buttonColorInt = buttonColor
+                accentColorInt = appAccentColor,
+                buttonColorInt = appAccentColor
             ) {
                 MainScreen(viewModel = viewModel)
             }

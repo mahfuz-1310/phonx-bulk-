@@ -63,14 +63,12 @@ import com.example.ui.theme.FontHelper
 @Composable
 fun SettingsScreen(
     themeMode: ThemeMode,
-    uiAccentColor: Int,
-    buttonColor: Int,
+    appAccentColor: Int,
     selectedFont: FontOption,
     totalSavedCount: Int,
     totalGeneratedCount: Int,
     onThemeModeChanged: (ThemeMode) -> Unit,
-    onUiAccentColorChanged: (Int) -> Unit,
-    onButtonColorChanged: (Int) -> Unit,
+    onAppAccentColorChanged: (Int) -> Unit,
     onFontChanged: (FontOption) -> Unit,
     onResetAppearance: () -> Unit,
     modifier: Modifier = Modifier
@@ -157,31 +155,19 @@ fun SettingsScreen(
             }
         }
 
-        // Section 2: UI Accent Color Customization
+        // Section 2: App Accent Color Customization
         item {
             ColorPickerCard(
-                title = "UI Accent Color",
-                subtitle = "Customizes active tabs, badges, cards, and highlight states",
-                currentColorInt = uiAccentColor,
+                title = "App Accent Color",
+                subtitle = "Changes UI accents, buttons, and highlights",
+                currentColorInt = appAccentColor,
                 defaultColorInt = AppPreferences.DEFAULT_ACCENT_COLOR,
-                onColorChanged = onUiAccentColorChanged,
-                testTagPrefix = "ui_accent_color"
+                onColorChanged = onAppAccentColorChanged,
+                testTagPrefix = "app_accent_color"
             )
         }
 
-        // Section 3: Button Color Customization
-        item {
-            ColorPickerCard(
-                title = "Button CTA Color",
-                subtitle = "Customizes Generate button and primary interactive CTAs",
-                currentColorInt = buttonColor,
-                defaultColorInt = AppPreferences.DEFAULT_BUTTON_COLOR,
-                onColorChanged = onButtonColorChanged,
-                testTagPrefix = "button_color"
-            )
-        }
-
-        // Section 4: Font Style Settings
+        // Section 3: Font Style Settings
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -446,7 +432,7 @@ fun SettingsScreen(
                 )
             },
             text = {
-                Text("This will reset your UI accent color, button color, theme mode, and font selection back to default settings.")
+                Text("This will reset your App Accent Color, theme mode, and font selection back to default settings.")
             },
             confirmButton = {
                 Button(

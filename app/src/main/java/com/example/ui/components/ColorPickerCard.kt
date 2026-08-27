@@ -346,6 +346,8 @@ fun ColorPickerCard(
                     modifier = Modifier
                         .weight(1f)
                         .height(56.dp)
+                        .testTag("${testTagPrefix}_preview_button"),
+                    shadowElevation = 2.dp
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -356,6 +358,60 @@ fun ColorPickerCard(
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             color = contrastColor
                         )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Live unified preview demonstrating that App Accent Color applies to both buttons and UI accents
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Live Preview:",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Sample active UI pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = currentColor.copy(alpha = 0.18f),
+                            border = BorderStroke(1.dp, currentColor.copy(alpha = 0.5f))
+                        ) {
+                            Text(
+                                text = "Active UI",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = currentColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
+
+                        // Sample primary button pill
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = currentColor
+                        ) {
+                            Text(
+                                text = "Button",
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = contrastColor,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                            )
+                        }
                     }
                 }
             }

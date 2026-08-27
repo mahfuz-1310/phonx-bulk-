@@ -16,6 +16,7 @@ class AppPreferences(context: Context) {
 
     companion object {
         const val KEY_THEME_MODE = "theme_mode"
+        const val KEY_APP_ACCENT_COLOR = "app_accent_color"
         const val KEY_UI_ACCENT_COLOR = "ui_accent_color"
         const val KEY_BUTTON_COLOR = "button_color"
         const val KEY_DEFAULT_FONT = "default_font"
@@ -26,18 +27,21 @@ class AppPreferences(context: Context) {
         const val KEY_NO_REPEAT = "no_repeat"
         const val KEY_TOTAL_GENERATED = "total_generated_count"
 
-        // Default vibrant & professional Indigo/Slate theme
+        // Default vibrant & professional Indigo theme
         const val DEFAULT_ACCENT_COLOR = 0xFF4F46E5.toInt() // Indigo 600
-        const val DEFAULT_BUTTON_COLOR = 0xFF4338CA.toInt() // Indigo 700
+        const val DEFAULT_BUTTON_COLOR = 0xFF4F46E5.toInt()
     }
 
     private val _themeMode = MutableStateFlow(loadThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
-    private val _uiAccentColor = MutableStateFlow(loadUiAccentColor())
+    private val _appAccentColor = MutableStateFlow(loadAppAccentColor())
+    val appAccentColor: StateFlow<Int> = _appAccentColor.asStateFlow()
+
+    private val _uiAccentColor = MutableStateFlow(_appAccentColor.value)
     val uiAccentColor: StateFlow<Int> = _uiAccentColor.asStateFlow()
 
-    private val _buttonColor = MutableStateFlow(loadButtonColor())
+    private val _buttonColor = MutableStateFlow(_appAccentColor.value)
     val buttonColor: StateFlow<Int> = _buttonColor.asStateFlow()
 
     private val _fontOption = MutableStateFlow(loadFontOption())
@@ -70,12 +74,19 @@ class AppPreferences(context: Context) {
         }
     }
 
-    private fun loadUiAccentColor(): Int {
+    private fun loadAppAccentColor(): Int {
+        if (prefs.contains(KEY_APP_ACCENT_COLOR)) {
+            return prefs.getInt(KEY_APP_ACCENT_COLOR, DEFAULT_ACCENT_COLOR)
+        }
         return prefs.getInt(KEY_UI_ACCENT_COLOR, DEFAULT_ACCENT_COLOR)
     }
 
+    private fun loadUiAccentColor(): Int {
+        return loadAppAccentColor()
+    }
+
     private fun loadButtonColor(): Int {
-        return prefs.getInt(KEY_BUTTON_COLOR, DEFAULT_BUTTON_COLOR)
+        return loadAppAccentColor()
     }
 
     private fun loadFontOption(): FontOption {
@@ -110,14 +121,23 @@ class AppPreferences(context: Context) {
         _themeMode.value = mode
     }
 
-    fun setUiAccentColor(color: Int) {
-        prefs.edit().putInt(KEY_UI_ACCENT_COLOR, color).apply()
+    fun setAppAccentColor(color: Int) {
+        prefs.edit()
+            .putInt(KEY_APP_ACCENT_COLOR, color)
+            .putInt(KEY_UI_ACCENT_COLOR, color)
+            .putInt(KEY_BUTTON_COLOR, color)
+            .apply()
+        _appAccentColor.value = color
         _uiAccentColor.value = color
+        _buttonColor.value = color
+    }
+
+    fun setUiAccentColor(color: Int) {
+        setAppAccentColor(color)
     }
 
     fun setButtonColor(color: Int) {
-        prefs.edit().putInt(KEY_BUTTON_COLOR, color).apply()
-        _buttonColor.value = color
+        setAppAccentColor(color)
     }
 
     fun setFontOption(font: FontOption) {
@@ -159,12 +179,14 @@ class AppPreferences(context: Context) {
     fun resetAppearance() {
         prefs.edit()
             .putString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
+            .putInt(KEY_APP_ACCENT_COLOR, DEFAULT_ACCENT_COLOR)
             .putInt(KEY_UI_ACCENT_COLOR, DEFAULT_ACCENT_COLOR)
             .putInt(KEY_BUTTON_COLOR, DEFAULT_BUTTON_COLOR)
             .putString(KEY_DEFAULT_FONT, FontOption.DEFAULT.name)
             .apply()
 
         _themeMode.value = ThemeMode.SYSTEM
+        _appAccentColor.value = DEFAULT_ACCENT_COLOR
         _uiAccentColor.value = DEFAULT_ACCENT_COLOR
         _buttonColor.value = DEFAULT_BUTTON_COLOR
         _fontOption.value = FontOption.DEFAULT
