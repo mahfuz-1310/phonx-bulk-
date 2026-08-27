@@ -50,6 +50,12 @@ fun SystemScreen(
         }
     }
 
+    LaunchedEffect(shizukuStatus) {
+        if (shizukuStatus == ShizukuStatus.PERMISSION_REQUIRED) {
+            onRequestShizukuPermission()
+        }
+    }
+
     LazyColumn(
         modifier = modifier
             .fillMaxSize()

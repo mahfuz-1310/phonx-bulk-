@@ -78,6 +78,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val shizukuBinderReceivedListener = Shizuku.OnBinderReceivedListener {
+        checkShizukuStatus()
+    }
+
+    private val shizukuBinderDeadListener = Shizuku.OnBinderDeadListener {
+        checkShizukuStatus()
+    }
+
     private val _toastEvent = MutableSharedFlow<String>()
     val toastEvent: SharedFlow<String> = _toastEvent.asSharedFlow()
 
@@ -97,6 +105,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         try {
             Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
+            Shizuku.addBinderReceivedListener(shizukuBinderReceivedListener)
+            Shizuku.addBinderDeadListener(shizukuBinderDeadListener)
         } catch (e: Throwable) {}
         checkShizukuStatus()
     }
@@ -105,6 +115,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         super.onCleared()
         try {
             Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
+            Shizuku.removeBinderReceivedListener(shizukuBinderReceivedListener)
+            Shizuku.removeBinderDeadListener(shizukuBinderDeadListener)
         } catch (e: Throwable) {}
     }
 
