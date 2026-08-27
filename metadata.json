@@ -1,0 +1,6 @@
+{
+  "name": "Phonx bulk",
+  "description": "Professional bulk name generator with realistic multilingual name engines, style customization, and export tools.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
