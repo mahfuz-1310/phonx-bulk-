@@ -278,14 +278,14 @@ fun ShizukuStatusCard(
     val statusColor = when (status) {
         ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
         ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
-        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.tertiary
+        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED, ShizukuStatus.DISCONNECTED -> MaterialTheme.colorScheme.tertiary
         ShizukuStatus.UNSUPPORTED -> MaterialTheme.colorScheme.error
     }
 
     val statusIcon = when (status) {
         ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
         ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Lock
-        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED -> Icons.Outlined.Warning
+        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED, ShizukuStatus.DISCONNECTED -> Icons.Outlined.Warning
         ShizukuStatus.UNSUPPORTED -> Icons.Outlined.ErrorOutline
     }
 
@@ -331,6 +331,7 @@ fun ShizukuStatusCard(
                     ShizukuStatus.UNSUPPORTED -> "Unsupported API"
                     ShizukuStatus.NOT_INSTALLED -> "Not Installed"
                     ShizukuStatus.NOT_RUNNING -> "Not Running"
+                    ShizukuStatus.DISCONNECTED -> "Disconnected"
                     ShizukuStatus.PERMISSION_REQUIRED -> "Permission Required"
                     ShizukuStatus.CONNECTED -> "Connected"
                 }
@@ -354,6 +355,7 @@ fun ShizukuStatusCard(
                 ShizukuStatus.UNSUPPORTED -> "The Shizuku API version on this device is not supported."
                 ShizukuStatus.NOT_INSTALLED -> "Shizuku is not installed. Please install it to use this feature."
                 ShizukuStatus.NOT_RUNNING -> "Shizuku is not currently available."
+                ShizukuStatus.DISCONNECTED -> "Shizuku binder disconnected."
                 ShizukuStatus.PERMISSION_REQUIRED -> "Shizuku is running, but this app does not have permission."
                 ShizukuStatus.CONNECTED -> "Shizuku permission is granted for this app."
             }
@@ -397,15 +399,9 @@ fun ShizukuStatusCard(
                 }
             }
 
-            // Temporary debug section
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Debug Info",
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
             val isBinderAvailable = try { rikka.shizuku.Shizuku.pingBinder() } catch (e: Throwable) { false }
             val isPermissionGranted = try { rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED } catch (e: Throwable) { false }
             val isApiSupported = try { !rikka.shizuku.Shizuku.isPreV11() } catch (e: Throwable) { false }

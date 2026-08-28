@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.example.ui.MainScreen
@@ -19,6 +20,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
+            LaunchedEffect(Unit) {
+                viewModel.checkShizukuStatus(autoRequestPermission = true)
+            }
             val themeMode by viewModel.preferences.themeMode.collectAsState()
             val appAccentColor by viewModel.preferences.appAccentColor.collectAsState()
 

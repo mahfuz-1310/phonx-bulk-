@@ -79,18 +79,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _shizukuStatus = MutableStateFlow<ShizukuStatus>(ShizukuStatus.NOT_RUNNING)
     val shizukuStatus: StateFlow<ShizukuStatus> = _shizukuStatus.asStateFlow()
 
+    private var hasRequestedShizukuPermission = false
+
     private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
         if (requestCode == 1001) {
-            checkShizukuStatus()
+            if (grantResult == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                _shizukuStatus.value = ShizukuStatus.CONNECTED
+                bindShizukuService()
+            } else {
+                _shizukuStatus.value = ShizukuStatus.PERMISSION_REQUIRED
+            }
         }
     }
 
     private val shizukuBinderReceivedListener = Shizuku.OnBinderReceivedListener {
-        checkShizukuStatus()
+        checkShizukuStatus(autoRequestPermission = true)
     }
 
     private val shizukuBinderDeadListener = Shizuku.OnBinderDeadListener {
-        checkShizukuStatus()
+        _shizukuStatus.value = ShizukuStatus.DISCONNECTED
     }
 
     private val _toastEvent = MutableSharedFlow<String>()
@@ -519,12 +526,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun checkShizukuStatus() {
+    fun checkShizukuStatus(autoRequestPermission: Boolean = false) {
+        android.util.Log.d("ShizukuStatus", "Checking Shizuku status (autoRequest=$autoRequestPermission)...")
         val pm = getApplication<Application>().packageManager
         val isInstalled = try {
-            pm.getPackageInfo("moe.shizuku.privileged.api", 0)
+            pm.getPackageInfo("moe.shizuku.manager", 0)
+            android.util.Log.d("ShizukuStatus", "Shizuku manager is installed.")
             true
         } catch (e: Throwable) {
+            android.util.Log.e("ShizukuStatus", "Shizuku manager NOT installed: ${e.message}")
             false
         }
 
@@ -534,8 +544,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val isRunning = try {
-            Shizuku.pingBinder()
+            val pingResult = Shizuku.pingBinder()
+            android.util.Log.d("ShizukuStatus", "pingBinder returned $pingResult")
+            pingResult
         } catch (e: Throwable) {
+            android.util.Log.e("ShizukuStatus", "pingBinder threw exception: ${e.message}")
             false
         }
         
@@ -545,8 +558,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val isUnsupported = try {
-            Shizuku.isPreV11()
+            val preV11 = Shizuku.isPreV11()
+            android.util.Log.d("ShizukuStatus", "isPreV11 returned $preV11")
+            preV11
         } catch (e: Throwable) {
+            android.util.Log.e("ShizukuStatus", "isPreV11 threw exception: ${e.message}")
             false
         }
 
@@ -556,13 +572,21 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         val hasPermission = try {
-            Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+            val permissionGranted = Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
+            android.util.Log.d("ShizukuStatus", "checkSelfPermission result: $permissionGranted")
+            permissionGranted
         } catch (e: Throwable) {
+            android.util.Log.e("ShizukuStatus", "checkSelfPermission threw exception: ${e.message}")
             false
         }
 
         if (!hasPermission) {
             _shizukuStatus.value = ShizukuStatus.PERMISSION_REQUIRED
+            if (autoRequestPermission && !hasRequestedShizukuPermission) {
+                hasRequestedShizukuPermission = true
+                android.util.Log.d("ShizukuStatus", "Automatically requesting Shizuku permission")
+                requestShizukuPermission()
+            }
         } else {
             _shizukuStatus.value = ShizukuStatus.CONNECTED
             bindShizukuService()
