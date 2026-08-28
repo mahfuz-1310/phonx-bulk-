@@ -70,7 +70,7 @@ enum class AppTab(
 ) {
     GENERATOR("Generator", Icons.Filled.AutoAwesome, Icons.Outlined.AutoAwesome, "tab_generator"),
     SAVED("Saved", Icons.Filled.Bookmark, Icons.Outlined.BookmarkBorder, "tab_saved"),
-    SYSTEM("System", Icons.Filled.Devices, Icons.Outlined.Devices, "tab_system"),
+    DEVICE_NAME("Device Name", Icons.Filled.Devices, Icons.Outlined.Devices, "tab_system"),
     SETTINGS("Settings", Icons.Filled.Settings, Icons.Outlined.Settings, "tab_settings")
 }
 
@@ -86,8 +86,6 @@ fun MainScreen(
     val savedNames by viewModel.filteredSavedNames.collectAsState()
     val savedSearchQuery by viewModel.savedSearchQuery.collectAsState()
     val savedCount by viewModel.savedCount.collectAsState()
-    val currentDeviceProfile by viewModel.currentDeviceProfile.collectAsState()
-    val savedDeviceProfiles by viewModel.savedDeviceProfiles.collectAsState()
     val shizukuStatus by viewModel.shizukuStatus.collectAsState()
 
     val themeMode by viewModel.preferences.themeMode.collectAsState()
@@ -272,12 +270,16 @@ fun MainScreen(
                                 onClearAllSaved = { viewModel.clearAllSaved() }
                             )
 
-                            AppTab.SYSTEM -> {
+                            AppTab.DEVICE_NAME -> {
                                 val currentDeviceName by viewModel.currentDeviceName.collectAsState()
+                                val shizukuError by viewModel.shizukuError.collectAsState()
+                                val detailedStatus by viewModel.detailedShizukuStatus.collectAsState()
                                 
                                 com.example.ui.screens.SystemScreen(
                                     currentDeviceName = currentDeviceName,
                                     shizukuStatus = shizukuStatus,
+                                    detailedShizukuStatus = detailedStatus,
+                                    shizukuError = shizukuError,
                                     onCheckShizuku = { viewModel.checkShizukuStatus() },
                                     onRequestShizukuPermission = { viewModel.requestShizukuPermission() },
                                     onLoadDeviceName = { viewModel.loadCurrentDeviceName() },

@@ -15,12 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.model.DetailedShizukuStatus
 import com.example.model.ShizukuStatus
 
 @Composable
 fun SystemScreen(
     currentDeviceName: String,
     shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_RUNNING,
+    detailedShizukuStatus: DetailedShizukuStatus = DetailedShizukuStatus(),
+    shizukuError: String? = null,
     onCheckShizuku: () -> Unit = {},
     onRequestShizukuPermission: () -> Unit = {},
     onLoadDeviceName: () -> Unit = {},
@@ -74,12 +77,12 @@ fun SystemScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text(
-                                text = "SYSTEM",
+                                text = "DEVICE NAME",
                                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "System tools and device utilities",
+                                text = "Real system device name editor",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -104,30 +107,23 @@ fun SystemScreen(
                         .fillMaxWidth()
                         .padding(20.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Device Name",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Change the real Android system device name.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Device Name",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Change the real Android system device name.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     ShizukuStatusCard(
                         status = shizukuStatus,
+                        detailedStatus = detailedShizukuStatus,
                         onCheckAgain = {
                             onCheckShizuku()
                             onLoadDeviceName()
@@ -139,6 +135,7 @@ fun SystemScreen(
                         Spacer(modifier = Modifier.height(24.dp))
                         DeviceNameEditor(
                             currentName = currentDeviceName,
+                            shizukuError = shizukuError,
                             onApply = onApplyDeviceName,
                             onRefresh = onLoadDeviceName,
                             onRestore = onRestoreOriginalName
@@ -153,23 +150,12 @@ fun SystemScreen(
 @Composable
 fun DeviceNameEditor(
     currentName: String,
+    shizukuError: String? = null,
     onApply: (String) -> Unit,
     onRefresh: () -> Unit,
     onRestore: () -> Unit
 ) {
-    var newNameInput by remember(currentName) { mutableStateOf("") }
-    var showDeviceSelector by remember { mutableStateOf(false) }
-
-    if (showDeviceSelector) {
-        com.example.ui.screens.DeviceSelectorDialog(
-            selectedDevice = newNameInput,
-            onDismiss = { showDeviceSelector = false },
-            onSelect = { 
-                newNameInput = it
-                showDeviceSelector = false
-            }
-        )
-    }
+    var newNameInput by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -200,30 +186,19 @@ fun DeviceNameEditor(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Surface(
+        
+        OutlinedTextField(
+            value = newNameInput,
+            onValueChange = { newNameInput = it },
             modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("Enter device name") },
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surface,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-            onClick = { showDeviceSelector = true }
-        ) {
-            Row(
-                modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = newNameInput.ifEmpty { "Select Device Name" },
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (newNameInput.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
-                )
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            )
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -266,12 +241,37 @@ fun DeviceNameEditor(
             Spacer(modifier = Modifier.width(8.dp))
             Text("Restore Previous Name")
         }
+
+        if (shizukuError != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f))
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text(
+                        text = "Debug Output",
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = shizukuError,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
 fun ShizukuStatusCard(
     status: ShizukuStatus,
+    detailedStatus: DetailedShizukuStatus,
     onCheckAgain: () -> Unit,
     onRequestPermission: () -> Unit
 ) {
@@ -366,8 +366,34 @@ fun ShizukuStatusCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
+            Spacer(modifier = Modifier.height(20.dp))
+            
+            // Detailed Real-time Status Indicators
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                StatusIndicator(
+                    label = "Binder",
+                    isActive = detailedStatus.binderAvailable,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                StatusIndicator(
+                    label = "Permission",
+                    isActive = detailedStatus.permissionGranted,
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                StatusIndicator(
+                    label = "Connection",
+                    isActive = detailedStatus.serviceBound,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
             if (status != ShizukuStatus.CONNECTED) {
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -382,7 +408,7 @@ fun ShizukuStatusCard(
                         ) {
                             Icon(Icons.Outlined.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Grant Shizuku Permission")
+                            Text("Grant Permission")
                         }
                     } else {
                         OutlinedButton(
@@ -393,33 +419,45 @@ fun ShizukuStatusCard(
                         ) {
                             Icon(Icons.Outlined.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Check Again")
+                            Text("Refresh Status")
                         }
                     }
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
-            Spacer(modifier = Modifier.height(8.dp))
-            val isBinderAvailable = try { rikka.shizuku.Shizuku.pingBinder() } catch (e: Throwable) { false }
-            val isPermissionGranted = try { rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED } catch (e: Throwable) { false }
-            val isApiSupported = try { !rikka.shizuku.Shizuku.isPreV11() } catch (e: Throwable) { false }
-            
-            Text(
-                text = "Binder: ${if (isBinderAvailable) "Available" else "Unavailable"}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+@Composable
+fun StatusIndicator(
+    label: String,
+    isActive: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+    val icon = if (isActive) Icons.Outlined.CheckCircle else Icons.Outlined.RadioButtonUnchecked
+    
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = color.copy(alpha = 0.05f),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.2f))
+    ) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(18.dp)
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Permission: ${if (isPermissionGranted) "Granted" else "Denied"}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "API: ${if (isApiSupported) "Supported" else "Unsupported"}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = color
             )
         }
     }
