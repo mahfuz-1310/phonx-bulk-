@@ -6,6 +6,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.IShizukuService
+import com.example.ShizukuService
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
+import com.example.BuildConfig
 import com.example.data.CountryData
 import com.example.data.database.AppDatabase
 import com.example.data.preferences.AppPreferences
@@ -31,6 +37,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 
 data class GeneratorUiState(
     val selectedGender: Gender = Gender.MALE,
@@ -415,6 +422,103 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    private val _currentDeviceName = MutableStateFlow<String>("")
+    val currentDeviceName: StateFlow<String> = _currentDeviceName.asStateFlow()
+    
+    private var shizukuService: IShizukuService? = null
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            shizukuService = IShizukuService.Stub.asInterface(service)
+            loadCurrentDeviceName()
+        }
+        override fun onServiceDisconnected(name: ComponentName?) {
+            shizukuService = null
+        }
+    }
+    
+    private fun bindShizukuService() {
+        if (shizukuService != null) return
+        try {
+            val userServiceArgs = Shizuku.UserServiceArgs(
+                ComponentName(getApplication<Application>().packageName, ShizukuService::class.java.name)
+            )
+                .daemon(false)
+                .processNameSuffix("service")
+                .debuggable(BuildConfig.DEBUG)
+                .version(1)
+            Shizuku.bindUserService(userServiceArgs, serviceConnection)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+        }
+    }
+
+    fun loadCurrentDeviceName() {
+        if (_shizukuStatus.value != ShizukuStatus.CONNECTED) return
+        if (shizukuService == null) {
+            bindShizukuService()
+            return
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = shizukuService?.executeCommand("settings get global device_name") ?: ""
+                _currentDeviceName.value = result
+                
+                val original = preferences.getOriginalDeviceName()
+                if (original == null && result.isNotEmpty() && result != "null") {
+                    preferences.saveOriginalDeviceName(result)
+                }
+            } catch (e: Throwable) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun applyDeviceName(newName: String) {
+        val trimmed = newName.trim()
+        if (trimmed.isEmpty()) {
+            viewModelScope.launch { _toastEvent.emit("Device name cannot be empty") }
+            return
+        }
+        
+        if (_shizukuStatus.value != ShizukuStatus.CONNECTED) {
+            viewModelScope.launch { _toastEvent.emit("Shizuku is not connected") }
+            return
+        }
+        
+        if (shizukuService == null) {
+            bindShizukuService()
+            viewModelScope.launch { _toastEvent.emit("Connecting to Shizuku service... try again") }
+            return
+        }
+        
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = shizukuService?.executeCommand("settings put global device_name '$trimmed'")
+                
+                // Verify
+                val verifyResult = shizukuService?.executeCommand("settings get global device_name") ?: ""
+                
+                if (verifyResult == trimmed) {
+                    _currentDeviceName.value = verifyResult
+                    _toastEvent.emit("Device name changed successfully")
+                } else {
+                    _toastEvent.emit("Failed to change device name")
+                }
+            } catch (e: Throwable) {
+                _toastEvent.emit("Error: ${e.message}")
+            }
+        }
+    }
+
+    fun restoreOriginalDeviceName() {
+        val original = preferences.getOriginalDeviceName()
+        if (original != null) {
+            applyDeviceName(original)
+        } else {
+            viewModelScope.launch { _toastEvent.emit("Original device name not found") }
+        }
+    }
+
     fun checkShizukuStatus() {
         val isRunning = try {
             Shizuku.pingBinder()
@@ -448,6 +552,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _shizukuStatus.value = ShizukuStatus.PERMISSION_REQUIRED
         } else {
             _shizukuStatus.value = ShizukuStatus.CONNECTED
+            bindShizukuService()
         }
     }
 
@@ -459,6 +564,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             } else if (Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 _shizukuStatus.value = ShizukuStatus.CONNECTED
+                bindShizukuService()
                 viewModelScope.launch {
                     _toastEvent.emit("Shizuku permission already granted")
                 }

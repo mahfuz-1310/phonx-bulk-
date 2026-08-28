@@ -214,4 +214,12 @@ class AppPreferences(context: Context) {
         val set = prefs.getStringSet(KEY_SAVED_DEVICE_PROFILES, emptySet()) ?: emptySet()
         return set.mapNotNull { com.example.model.DeviceProfile.deserialize(it) }.sortedByDescending { it.timestamp }
     }
+
+    fun getOriginalDeviceName(): String? {
+        return prefs.getString("original_device_name", null)
+    }
+
+    fun saveOriginalDeviceName(name: String) {
+        prefs.edit().putString("original_device_name", name).apply()
+    }
 }

@@ -272,21 +272,19 @@ fun MainScreen(
                                 onClearAllSaved = { viewModel.clearAllSaved() }
                             )
 
-                            AppTab.SYSTEM -> com.example.ui.screens.SystemScreen(
-                                currentProfile = currentDeviceProfile,
-                                savedProfiles = savedDeviceProfiles,
-                                shizukuStatus = shizukuStatus,
-                                onCheckShizuku = { viewModel.checkShizukuStatus() },
-                                onRequestShizukuPermission = { viewModel.requestShizukuPermission() },
-                                onGenerateRandom = { viewModel.generateRandomDevice() },
-                                onGenerateCustom = { brand, model, android, ram, storage, res ->
-                                    viewModel.generateCustomDevice(brand, model, android, ram, storage, res)
-                                },
-                                onSaveProfile = { viewModel.saveCurrentDeviceProfile() },
-                                onDeleteProfile = { viewModel.deleteDeviceProfile(it) },
-                                onResetProfile = { viewModel.resetDeviceProfile() },
-                                onCopyProfile = { viewModel.copyDeviceProfileToClipboard(it) }
-                            )
+                            AppTab.SYSTEM -> {
+                                val currentDeviceName by viewModel.currentDeviceName.collectAsState()
+                                
+                                com.example.ui.screens.SystemScreen(
+                                    currentDeviceName = currentDeviceName,
+                                    shizukuStatus = shizukuStatus,
+                                    onCheckShizuku = { viewModel.checkShizukuStatus() },
+                                    onRequestShizukuPermission = { viewModel.requestShizukuPermission() },
+                                    onLoadDeviceName = { viewModel.loadCurrentDeviceName() },
+                                    onApplyDeviceName = { viewModel.applyDeviceName(it) },
+                                    onRestoreOriginalName = { viewModel.restoreOriginalDeviceName() }
+                                )
+                            }
 
                             AppTab.SETTINGS -> SettingsScreen(
                                 themeMode = themeMode,
