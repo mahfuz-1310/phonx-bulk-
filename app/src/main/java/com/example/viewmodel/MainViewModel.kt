@@ -502,7 +502,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     _currentDeviceName.value = verifyResult
                     _toastEvent.emit("Device name changed successfully")
                 } else {
-                    _toastEvent.emit("Failed to change device name")
+                    _toastEvent.emit("Android/OEM does not allow changing the system device name on this device.")
                 }
             } catch (e: Throwable) {
                 _toastEvent.emit("Error: ${e.message}")
@@ -520,6 +520,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkShizukuStatus() {
+        val pm = getApplication<Application>().packageManager
+        val isInstalled = try {
+            pm.getPackageInfo("moe.shizuku.privileged.api", 0)
+            true
+        } catch (e: Throwable) {
+            false
+        }
+
+        if (!isInstalled) {
+            _shizukuStatus.value = ShizukuStatus.NOT_INSTALLED
+            return
+        }
+
         val isRunning = try {
             Shizuku.pingBinder()
         } catch (e: Throwable) {

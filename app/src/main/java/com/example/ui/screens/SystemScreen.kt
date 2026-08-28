@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -156,6 +158,18 @@ fun DeviceNameEditor(
     onRestore: () -> Unit
 ) {
     var newNameInput by remember(currentName) { mutableStateOf("") }
+    var showDeviceSelector by remember { mutableStateOf(false) }
+
+    if (showDeviceSelector) {
+        com.example.ui.screens.DeviceSelectorDialog(
+            selectedDevice = newNameInput,
+            onDismiss = { showDeviceSelector = false },
+            onSelect = { 
+                newNameInput = it
+                showDeviceSelector = false
+            }
+        )
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -180,14 +194,36 @@ fun DeviceNameEditor(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = newNameInput,
-            onValueChange = { newNameInput = it },
-            label = { Text("New Device Name") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp)
+        Text(
+            text = "New Device Name",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        Spacer(modifier = Modifier.height(4.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            onClick = { showDeviceSelector = true }
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = newNameInput.ifEmpty { "Select Device Name" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (newNameInput.isEmpty()) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
+                )
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -210,7 +246,8 @@ fun DeviceNameEditor(
                 onClick = { onApply(newNameInput) },
                 modifier = Modifier.weight(1.5f),
                 shape = RoundedCornerShape(12.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
+                contentPadding = PaddingValues(vertical = 12.dp),
+                enabled = newNameInput.isNotBlank()
             ) {
                 Icon(Icons.Outlined.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
@@ -241,14 +278,14 @@ fun ShizukuStatusCard(
     val statusColor = when (status) {
         ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
         ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
-        ShizukuStatus.NOT_RUNNING -> MaterialTheme.colorScheme.tertiary
+        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.tertiary
         ShizukuStatus.UNSUPPORTED -> MaterialTheme.colorScheme.error
     }
 
     val statusIcon = when (status) {
         ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
         ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Lock
-        ShizukuStatus.NOT_RUNNING -> Icons.Outlined.Warning
+        ShizukuStatus.NOT_RUNNING, ShizukuStatus.NOT_INSTALLED -> Icons.Outlined.Warning
         ShizukuStatus.UNSUPPORTED -> Icons.Outlined.ErrorOutline
     }
 
@@ -292,6 +329,7 @@ fun ShizukuStatusCard(
 
                 val statusText = when (status) {
                     ShizukuStatus.UNSUPPORTED -> "Unsupported API"
+                    ShizukuStatus.NOT_INSTALLED -> "Not Installed"
                     ShizukuStatus.NOT_RUNNING -> "Not Running"
                     ShizukuStatus.PERMISSION_REQUIRED -> "Permission Required"
                     ShizukuStatus.CONNECTED -> "Connected"
@@ -314,6 +352,7 @@ fun ShizukuStatusCard(
 
             val messageText = when (status) {
                 ShizukuStatus.UNSUPPORTED -> "The Shizuku API version on this device is not supported."
+                ShizukuStatus.NOT_INSTALLED -> "Shizuku is not installed. Please install it to use this feature."
                 ShizukuStatus.NOT_RUNNING -> "Shizuku is not currently available."
                 ShizukuStatus.PERMISSION_REQUIRED -> "Shizuku is running, but this app does not have permission."
                 ShizukuStatus.CONNECTED -> "Shizuku permission is granted for this app."
