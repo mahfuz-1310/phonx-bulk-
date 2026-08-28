@@ -663,7 +663,7 @@ fun ShizukuStatusCard(
             )
             val isBinderAvailable = try { rikka.shizuku.Shizuku.pingBinder() } catch (e: Throwable) { false }
             val isPermissionGranted = try { rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED } catch (e: Throwable) { false }
-            val isApiSupported = !rikka.shizuku.Shizuku.isPreV11()
+            val isApiSupported = try { !rikka.shizuku.Shizuku.isPreV11() } catch (e: Throwable) { false }
             
             Text(
                 text = "Binder: ${if (isBinderAvailable) "Available" else "Unavailable"}",

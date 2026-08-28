@@ -416,11 +416,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkShizukuStatus() {
-        if (Shizuku.isPreV11()) {
-            _shizukuStatus.value = ShizukuStatus.UNSUPPORTED
-            return
-        }
-
         val isRunning = try {
             Shizuku.pingBinder()
         } catch (e: Throwable) {
@@ -429,6 +424,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         
         if (!isRunning) {
             _shizukuStatus.value = ShizukuStatus.NOT_RUNNING
+            return
+        }
+
+        val isUnsupported = try {
+            Shizuku.isPreV11()
+        } catch (e: Throwable) {
+            false
+        }
+
+        if (isUnsupported) {
+            _shizukuStatus.value = ShizukuStatus.UNSUPPORTED
             return
         }
 
