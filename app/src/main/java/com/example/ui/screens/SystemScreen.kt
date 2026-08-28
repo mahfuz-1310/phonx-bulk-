@@ -23,7 +23,7 @@ import com.example.model.ShizukuStatus
 fun SystemScreen(
     currentProfile: DeviceProfile?,
     savedProfiles: List<DeviceProfile>,
-    shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_INSTALLED,
+    shizukuStatus: ShizukuStatus = ShizukuStatus.NOT_RUNNING,
     onCheckShizuku: () -> Unit = {},
     onRequestShizukuPermission: () -> Unit = {},
     onGenerateRandom: () -> Unit,
@@ -536,14 +536,14 @@ fun ShizukuStatusCard(
         ShizukuStatus.CONNECTED -> MaterialTheme.colorScheme.primary
         ShizukuStatus.PERMISSION_REQUIRED -> MaterialTheme.colorScheme.secondary
         ShizukuStatus.NOT_RUNNING -> MaterialTheme.colorScheme.tertiary
-        ShizukuStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+        ShizukuStatus.UNSUPPORTED -> MaterialTheme.colorScheme.error
     }
 
     val statusIcon = when (status) {
         ShizukuStatus.CONNECTED -> Icons.Outlined.CheckCircle
         ShizukuStatus.PERMISSION_REQUIRED -> Icons.Outlined.Lock
         ShizukuStatus.NOT_RUNNING -> Icons.Outlined.Warning
-        ShizukuStatus.NOT_INSTALLED -> Icons.Outlined.ErrorOutline
+        ShizukuStatus.UNSUPPORTED -> Icons.Outlined.ErrorOutline
     }
 
     Card(
@@ -585,7 +585,7 @@ fun ShizukuStatusCard(
                 }
 
                 val statusText = when (status) {
-                    ShizukuStatus.NOT_INSTALLED -> "Not Installed"
+                    ShizukuStatus.UNSUPPORTED -> "Unsupported API"
                     ShizukuStatus.NOT_RUNNING -> "Not Running"
                     ShizukuStatus.PERMISSION_REQUIRED -> "Permission Required"
                     ShizukuStatus.CONNECTED -> "Connected"
@@ -607,10 +607,10 @@ fun ShizukuStatusCard(
             Spacer(modifier = Modifier.height(10.dp))
 
             val messageText = when (status) {
-                ShizukuStatus.NOT_INSTALLED -> "Shizuku is not installed on this device."
-                ShizukuStatus.NOT_RUNNING -> "Shizuku is installed but the Shizuku service is not running."
-                ShizukuStatus.PERMISSION_REQUIRED -> "Shizuku is running, but this app does not have Shizuku permission."
-                ShizukuStatus.CONNECTED -> "Shizuku permission granted."
+                ShizukuStatus.UNSUPPORTED -> "The Shizuku API version on this device is not supported."
+                ShizukuStatus.NOT_RUNNING -> "Shizuku is not currently available."
+                ShizukuStatus.PERMISSION_REQUIRED -> "Shizuku is running, but this app does not have permission."
+                ShizukuStatus.CONNECTED -> "Shizuku permission is granted for this app."
             }
 
             Text(
@@ -651,6 +651,35 @@ fun ShizukuStatusCard(
                     }
                 }
             }
+
+            // Temporary debug section
+            Spacer(modifier = Modifier.height(16.dp))
+            Divider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Debug Info",
+                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            val isBinderAvailable = try { rikka.shizuku.Shizuku.pingBinder() } catch (e: Throwable) { false }
+            val isPermissionGranted = try { rikka.shizuku.Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED } catch (e: Throwable) { false }
+            val isApiSupported = !rikka.shizuku.Shizuku.isPreV11()
+            
+            Text(
+                text = "Binder: ${if (isBinderAvailable) "Available" else "Unavailable"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "Permission: ${if (isPermissionGranted) "Granted" else "Denied"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = "API: ${if (isApiSupported) "Supported" else "Unsupported"}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

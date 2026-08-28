@@ -69,7 +69,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _savedDeviceProfiles = MutableStateFlow<List<DeviceProfile>>(preferences.loadSavedDeviceProfiles())
     val savedDeviceProfiles: StateFlow<List<DeviceProfile>> = _savedDeviceProfiles.asStateFlow()
 
-    private val _shizukuStatus = MutableStateFlow<ShizukuStatus>(ShizukuStatus.NOT_INSTALLED)
+    private val _shizukuStatus = MutableStateFlow<ShizukuStatus>(ShizukuStatus.NOT_RUNNING)
     val shizukuStatus: StateFlow<ShizukuStatus> = _shizukuStatus.asStateFlow()
 
     private val shizukuPermissionListener = Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
@@ -416,15 +416,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun checkShizukuStatus() {
-        val context = getApplication<Application>()
-        val isInstalled = try {
-            context.packageManager.getPackageInfo("moe.shizuku.manager", 0)
-            true
-        } catch (e: Throwable) {
-            false
-        }
-        if (!isInstalled) {
-            _shizukuStatus.value = ShizukuStatus.NOT_INSTALLED
+        if (Shizuku.isPreV11()) {
+            _shizukuStatus.value = ShizukuStatus.UNSUPPORTED
             return
         }
 
@@ -433,17 +426,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         } catch (e: Throwable) {
             false
         }
+        
         if (!isRunning) {
             _shizukuStatus.value = ShizukuStatus.NOT_RUNNING
             return
         }
 
         val hasPermission = try {
-            if (Shizuku.isPreV11()) {
-                false
-            } else {
-                Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
-            }
+            Shizuku.checkSelfPermission() == android.content.pm.PackageManager.PERMISSION_GRANTED
         } catch (e: Throwable) {
             false
         }
