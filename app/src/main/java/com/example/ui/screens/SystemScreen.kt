@@ -50,12 +50,6 @@ fun SystemScreen(
         }
     }
 
-    LaunchedEffect(shizukuStatus) {
-        if (shizukuStatus == ShizukuStatus.PERMISSION_REQUIRED) {
-            onRequestShizukuPermission()
-        }
-    }
-
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -641,7 +635,7 @@ fun ShizukuStatusCard(
                         ) {
                             Icon(Icons.Outlined.LockOpen, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("Request Permission")
+                            Text("Grant Shizuku Permission")
                         }
                     } else {
                         OutlinedButton(
